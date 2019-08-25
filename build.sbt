@@ -57,9 +57,8 @@ addCommandAlias("validate", Seq(
   "scalafix --check",
   "test:scalafix --check",
   "test:compile",
-  "+test",
-  "tut").mkString(";", ";", "")
-)
+  "+test"
+).mkString(";", ";", ""))
 
 lazy val protobuf = crossProject(JSPlatform, JVMPlatform)
   .in(file("modules/protobuf"))
