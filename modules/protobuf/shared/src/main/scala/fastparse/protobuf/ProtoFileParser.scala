@@ -2,6 +2,7 @@ package fastparse.protobuf
 
 import fastparse._
 
+@SuppressWarnings(Array("DisableSyntax.throw"))
 object LexicalElementsParser {
   import NoWhitespace._
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#letters_and_digits
@@ -70,6 +71,7 @@ object LexicalElementsParser {
     strLit.map(StringConstant) | boolLit.map(BooleanConstant))
 }
 
+@SuppressWarnings(Array("DisableSyntax.throw"))
 object SyntaxParser {
   import JavaWhitespace._
   import LexicalElementsParser._
@@ -121,7 +123,7 @@ object SyntaxParser {
     .map {
       case (from, None) => Range(from, None)
       case (from, Some(to: Int)) => Range(from, Some(IntToRange(to)))
-      case (from, Some(max: String)) => Range(from, Some(MaxToRange))
+      case (from, Some("max")) => Range(from, Some(MaxToRange))
       case (_, Some(other)) => throw new IllegalStateException(s"Unexpected to in range found $other")
     }
   def fieldNames[_: P]: P[ReservedFieldNames] = P(fieldName.rep(min = 1, sep = ","))
