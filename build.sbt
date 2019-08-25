@@ -1,5 +1,7 @@
 import sbtcrossproject.{crossProject, CrossType}
 
+ThisBuild / scalaVersion := "2.13.0"
+
 lazy val commonSettings = Seq(
   organization := "com.gubbns",
   homepage := Some(url(s"https://slakah.github.io/${name.value}/")),
@@ -8,7 +10,6 @@ lazy val commonSettings = Seq(
     url(s"https://github.com/Slakah/${name.value}"),
     s"scm:git@github.com:Slakah/${name.value}.git"
   )),
-  scalaVersion := "2.13.0",
   // https://scalacenter.github.io/scalafix/docs/users/installation.html
   addCompilerPlugin(scalafixSemanticdb),
   scalacOptions ++= scalacOpts :+ "-Yrangepos"
