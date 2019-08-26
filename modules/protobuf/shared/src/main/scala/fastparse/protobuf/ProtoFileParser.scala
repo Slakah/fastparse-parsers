@@ -125,7 +125,8 @@ object SyntaxParser {
       case (from, Some("max")) => Range(from, Some(MaxToRange))
       case (_, Some(other)) => throw new IllegalStateException(s"Unexpected to in range found $other")
     }
-  def fieldNames[_: P]: P[ReservedFieldNames] = P(fieldName.rep(min = 1, sep = ","))
+  // the spec doesn't specify the surrounding quote
+  def fieldNames[_: P]: P[ReservedFieldNames] = P((ident.! | ("\"" ~/ ident.! ~ "\"")).rep(min = 1, sep = ","))
     .map(ReservedFieldNames)
 }
 

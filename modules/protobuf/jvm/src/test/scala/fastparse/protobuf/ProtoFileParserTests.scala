@@ -47,6 +47,7 @@ object ProtoFileParserTests extends TestSuite {
           |syntax = "proto3";
           |message Foo {
           |  reserved 1;
+          |  reserved "foo", "bar";
           |  reserved 4 to 7, 1000 to max;
           |}
         """.stripMargin
@@ -55,6 +56,7 @@ object ProtoFileParserTests extends TestSuite {
         ReservedRanges(List(
           Range(1, None)
         )),
+        ReservedFieldNames(List("foo", "bar")),
         ReservedRanges(List(
           Range(4, Some(IntToRange(7))),
           Range(1000, Some(MaxToRange))
