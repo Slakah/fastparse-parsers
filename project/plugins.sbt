@@ -1,4 +1,4 @@
-addSbtPlugin("com.github.tkawachi" % "sbt-doctest" % "0.9.3")
+addSbtPlugin("com.github.tkawachi" % "sbt-doctest" % "0.9.5")
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "1.0.0")
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.6")
 addSbtPlugin("ch.epfl.scala" % "sbt-release-early" % "2.1.1")
