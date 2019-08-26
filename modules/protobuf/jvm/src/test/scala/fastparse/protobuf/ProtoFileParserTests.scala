@@ -26,19 +26,42 @@ object ProtoFileParserTests extends TestSuite {
       val result = parse(body, ProtoFileParser.proto(_))
       assert(!result.isSuccess)
     }
+    test("fail to parse an invalid expression") - {
+      val body =
+        """
+          |syntax = "proto3";
+          |message Foo {
+        """.stripMargin
+      val result = parse(body, ProtoFileParser.proto(_))
+      assertMatch(result) {
+        case failure: Parsed.Failure if failure.trace().msg == "Expected \"}\":4:9, found \"\"" => ()
+      }
+    }
     test("fail to parse proto without syntax expression") - {
       val result = parse("", ProtoFileParser.proto(_))
       assert(!result.isSuccess)
     }
-    test("parse addressbook.proto example") -
-      runProtoEqualsCheck("addressbook.proto", ExampleProtos.addressbook)
-
-    test("parse wrappers_test.proto example") -
-      runProtoEqualsCheck("wrappers_test.proto", ExampleProtos.wrappersTest)
-
-    test("parse proto3_message.proto example") -
-      runProtoEqualsCheck("proto3_message.proto", ExampleProtos.proto3Message)
-
+    test("parse reserved expression") - {
+      val body =
+        """
+          |syntax = "proto3";
+          |message Foo {
+          |  reserved 1;
+          |  reserved 4 to 7, 1000 to max;
+          |}
+        """.stripMargin
+      val result = parse(body, ProtoFileParser.proto(_))
+      val proto = ProtoFile(List(Message("Foo", List(
+        ReservedRanges(List(
+          Range(1, None)
+        )),
+        ReservedRanges(List(
+          Range(4, Some(IntToRange(7))),
+          Range(1000, Some(MaxToRange))
+        ))
+      ))))
+      assert(result == Parsed.Success(proto, body.length))
+    }
     test("parse service definition") - {
       val body =
         """
@@ -53,6 +76,15 @@ object ProtoFileParserTests extends TestSuite {
       ))
       assert(result == Parsed.Success(proto, body.length))
     }
-  }
+    test("examples") - {
+      test("parse addressbook.proto example") -
+        runProtoEqualsCheck("addressbook.proto", ExampleProtos.addressbook)
 
+      test("parse wrappers_test.proto example") -
+        runProtoEqualsCheck("wrappers_test.proto", ExampleProtos.wrappersTest)
+
+      test("parse proto3_message.proto example") -
+        runProtoEqualsCheck("proto3_message.proto", ExampleProtos.proto3Message)
+    }
+  }
 }
