@@ -1,6 +1,7 @@
 package fastparse.protobuf
 
 sealed trait Constant
+final case class FullIdentConstant(idents: Seq[String]) extends Constant
 final case class StringConstant(value: String) extends Constant
 final case class IntConstant(value: Int) extends Constant
 final case class FloatConstant(value: Float) extends Constant
@@ -60,7 +61,7 @@ object Import {
   case object WeakModifier extends Modifier
   case object PublicModifier extends Modifier
 }
-final case class Package(`package`: String) extends Expr
+final case class Package(`package`: Seq[String]) extends Expr
 final case class OptionExpr(name: String, value: Constant) extends Expr with EnumExpr with MessageExpr with ServiceExpr
 final case class Enum(name: String, body: Seq[EnumExpr]) extends Expr with MessageExpr
 final case class EnumField(name: String, number: Int, options: Seq[OptionExpr]) extends EnumExpr

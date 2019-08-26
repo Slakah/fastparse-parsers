@@ -12,7 +12,7 @@ object LexicalElementsParser {
   def hexDigit[_: P]: P0 = P(CharIn("0-9", "A-F", "a-f"))
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#identifiers
   def ident[_: P]: P0 = P(letter ~ (letter | decimalDigit | "_").rep)
-  def fullIdent[_: P]: P[String] = P(ident.rep(min = 1, sep = ".").!)
+  def fullIdent[_: P]: P[Seq[String]] = P(ident.!.rep(min = 1, sep = "."))
   def messageName[_: P]: P[String] = P(ident.!)
   def enumName[_: P]: P[String] = P(ident.!)
   def fieldName[_: P]: P[String] = P(ident.!)
@@ -60,7 +60,6 @@ object LexicalElementsParser {
   def emptyStatement[_: P]: P0 = P(";")
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#constant
   def constant[_: P]: P[Constant] = P(
-    fullIdent.!.map(StringConstant) |
     (StringIn("-", "+").? ~ intLit).!.map(s => IntConstant(s.toInt)) |
     (StringIn("-", "+").? ~ floatLit).!.map {
       case "-inf" => FloatConstant(Float.NegativeInfinity)
@@ -68,7 +67,7 @@ object LexicalElementsParser {
       case "+nan" | "nan" | "-nan" => FloatConstant(Float.NaN)
       case s => FloatConstant(s.toFloat)
     } |
-    strLit.map(StringConstant) | boolLit.map(BooleanConstant))
+    strLit.map(StringConstant) | boolLit.map(BooleanConstant) | fullIdent.map(FullIdentConstant))
 }
 
 @SuppressWarnings(Array("DisableSyntax.throw"))
@@ -109,7 +108,7 @@ object SyntaxParser {
   def oneofField[_: P]: P[OneofField] = P(type_.! ~ fieldName ~ "=" ~ fieldNumber ~ ("[" ~/ fieldOptions ~ "]").? ~ ";")
     .map { case (t, n, num, opts) => OneofField(t, n, num, opts.toList.flatten) }
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#map_field
-  def mapField[_: P]: P[MapField] = P("map" ~ "<" ~ keyType ~ "," ~ type_.! ~ ">" ~/ mapName ~ "=" ~ fieldNumber ~ ("[" ~/ fieldOptions ~ "]").? ~ ";")
+  def mapField[_: P]: P[MapField] = P("map" ~ "<" ~/ keyType ~ "," ~ type_.! ~ ">" ~/ mapName ~ "=" ~ fieldNumber ~ ("[" ~/ fieldOptions ~ "]").? ~ ";")
     .map { case (kt, t, n, num, opts) => MapField(kt, t, n, num, opts.toList.flatten) }
   def keyType[_: P]: P[KeyType] = P(StringIn(
     "int32", "int64", "uint32", "uint64", "sint32", "sint64",
@@ -164,7 +163,7 @@ object ProtoFileParser {
   import SyntaxParser._
   import TopLevelDefinitionsParser._
 
-  def proto[_: P]: P[ProtoFile] = P(Start ~ syntax ~ (
+  def proto[_: P]: P[ProtoFile] = P(Start ~ syntax ~/ (
       import_.map(List(_)) | package_.map(List(_)) | option.map(List(_)) |
       topLevelDef.map(List(_)) | emptyStatement.map(_ => List.empty)
     ).rep ~ End).map(l => ProtoFile(l.flatten))
