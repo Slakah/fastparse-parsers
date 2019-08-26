@@ -38,6 +38,21 @@ object ProtoFileParserTests extends TestSuite {
 
     test("parse proto3_message.proto example") -
       runProtoEqualsCheck("proto3_message.proto", ExampleProtos.proto3Message)
+
+    test("parse service definition") - {
+      val body =
+        """
+          |syntax = "proto3";
+          |service SearchService {
+          |  rpc Search (SearchRequest) returns (SearchResponse);
+          |}
+        """.stripMargin
+      val result = parse(body, ProtoFileParser.proto(_))
+      val proto = ProtoFile(List(
+        Service("SearchService", List(Rpc("Search", "SearchRequest", "SearchResponse", List.empty)))
+      ))
+      assert(result == Parsed.Success(proto, body.length))
+    }
   }
 
 }
