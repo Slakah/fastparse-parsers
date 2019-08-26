@@ -48,6 +48,24 @@ object ExampleProtos {
     ))
   ))
 
+  val proto3Example = ProtoFile(List(
+    Import(Some(Import.PublicModifier), "other.proto"),
+    OptionExpr("java_package", StringConstant("com.example.foo")),
+    Enum("EnumAllowingAlias", List(OptionExpr("allow_alias", BooleanConstant(true)),
+      EnumField("UNKNOWN", 0, List.empty), EnumField("STARTED", 1, List.empty),
+      EnumField("RUNNING", 2, List(OptionExpr("(custom_option)", StringConstant("hello world"))))
+    )),
+    Message("outer", List(
+      OptionExpr("(my_option).a", BooleanConstant(true)),
+      Message("inner", List(
+        Field(repeated = false, "int64", "ival", 1, List.empty)
+      )),
+      Field(repeated = true, "inner", "inner_message", 2, List.empty),
+      Field(repeated = false, "EnumAllowingAlias", "enum_field", 3, List.empty),
+      MapField(KeyType.int32, "string", "my_map", 4, List.empty)
+    ))
+  ))
+
   val proto3Message = ProtoFile(List(
     Package(List("protobuf", "experimental")),
     OptionExpr("java_package", StringConstant("com.google.protobuf.testing")),

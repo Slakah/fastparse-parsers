@@ -83,6 +83,9 @@ object ProtoFileParserTests extends TestSuite {
       test("parse wrappers_test.proto example") -
         runProtoEqualsCheck("wrappers_test.proto", ExampleProtos.wrappersTest)
 
+      test("parse proto3_example.proto example") -
+        runProtoEqualsCheck("proto3_example.proto", ExampleProtos.proto3Example)
+
       test("parse proto3_message.proto example") -
         runProtoEqualsCheck("proto3_message.proto", ExampleProtos.proto3Message)
     }
