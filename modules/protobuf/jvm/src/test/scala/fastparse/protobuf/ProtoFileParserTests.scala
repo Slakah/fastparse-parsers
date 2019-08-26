@@ -11,19 +11,36 @@ object ProtoFileParserTests extends TestSuite {
   private def runParseSuccessChecks(path: String): Unit = {
     val body = readResource(path)
     val result = parse(body, ProtoFileParser.proto(_))
-    assert(result.isSuccess)
+    val bodyLength = body.length
+    assertMatch(result) {
+      case Parsed.Success(ProtoFile(_), `bodyLength`) => ()
+    }
   }
 
   override val tests = Tests {
+    test("parse empty proto") - {
+      val body = """syntax = "proto3"; """
+      val result = parse(body, ProtoFileParser.proto(_))
+      assert(result == Parsed.Success(ProtoFile(Seq.empty), body.length))
+    }
+    test("fail to parse proto2") - {
+      val body = """syntax = "proto2"; """
+      val result = parse(body, ProtoFileParser.proto(_))
+      assert(!result.isSuccess)
+    }
+    test("fail to parse proto without syntax") - {
+      val result = parse("", ProtoFileParser.proto(_))
+      assert(!result.isSuccess)
+    }
     test("parse addressbook.proto example") - {
       val body = readResource("addressbook.proto")
       val result = parse(body, ProtoFileParser.proto(_))
-      assert(result == Parsed.Success(expAddressbookProto, 1319))
+      assert(result == Parsed.Success(expAddressbookProto, body.length))
     }
     test("parse wrappers_test.proto example") - {
       val body = readResource("wrappers_test.proto")
       val result = parse(body, ProtoFileParser.proto(_))
-      assert(result == Parsed.Success(expwrappersTestProto, 2477))
+      assert(result == Parsed.Success(expwrappersTestProto, body.length))
     }
     test("successfully parse examples") - {
       test("proto3_message.proto") - runParseSuccessChecks("proto3_message.proto")
