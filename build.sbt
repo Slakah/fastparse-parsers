@@ -1,4 +1,4 @@
-import sbtcrossproject.{crossProject, CrossType}
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 ThisBuild / scalaVersion := "2.13.0"
 
@@ -81,9 +81,6 @@ lazy val protobuf = crossProject(JSPlatform, JVMPlatform)
     ).map(_ % "test")
   )
 
-lazy val protobufJS = protobuf.js
-lazy val protobufJVM = protobuf.jvm
-
 lazy val scalacOpts = Seq(
   "-deprecation", // Emit warning and location for usages of deprecated APIs.
   "-explaintypes", // Explain type errors in more detail.
@@ -126,7 +123,7 @@ lazy val scalacOpts = Seq(
 )
 
 lazy val noPublishSettings = Seq(
-  skip in publish := true,
+  publish / skip := true,
   PgpKeys.publishSigned := {},
   PgpKeys.publishLocalSigned := {},
   publishArtifact := false
