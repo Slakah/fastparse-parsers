@@ -49,15 +49,15 @@ object LexicalElementsParser {
   def strLit[_: P]: P[String] = P(
     ("'" ~/ (!"'" ~ charValue).rep.! ~ "'") |
     ("\"" ~/ (!"\"" ~ charValue).rep.! ~ "\""))
-  def charValue[_: P] = P(
+  def charValue[_: P]: P0 = P(
     hexEscape | octEscape | charEscape |
     (!StringIn("\\0", "\n", "\\") ~ AnyChar))
-  def hexEscape[_: P] = P("\\" ~ CharIn("xX") ~ hexDigit ~ hexDigit)
-  def octEscape[_: P] = P("\\" ~ octalDigit ~ octalDigit ~ octalDigit)
-  def charEscape[_: P] = P("\\" ~ CharIn("""abfnrtv\'""""))
-  def quote[_: P] = CharIn("'\"")
+  def hexEscape[_: P]: P0 = P("\\" ~ CharIn("xX") ~ hexDigit ~ hexDigit)
+  def octEscape[_: P]: P0 = P("\\" ~ octalDigit ~ octalDigit ~ octalDigit)
+  def charEscape[_: P]: P0 = P("\\" ~ CharIn("""abfnrtv\'""""))
+  def quote[_: P]: P0 = CharIn("'\"")
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#empty_statement
-  def emptyStatement[_: P] = P(";")
+  def emptyStatement[_: P]: P0 = P(";")
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#constant
   def constant[_: P]: P[Constant] = P(
     fullIdent.!.map(StringConstant) |
@@ -76,7 +76,7 @@ object SyntaxParser {
   import JavaWhitespace._
   import LexicalElementsParser._
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#syntax
-  def syntax[_: P] = P("syntax" ~/ "=" ~ quote ~ "proto3" ~ quote ~ ";")
+  def syntax[_: P]: P0 = P("syntax" ~/ "=" ~ quote ~ "proto3" ~ quote ~ ";")
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#import_statement
   def import_[_: P]: P[Import] = P("import" ~/ StringIn("weak", "public").!.? ~ strLit ~ ";").map {
     case (Some("weak"), fileName) => Import(Some(Import.WeakModifier), fileName)
@@ -87,11 +87,11 @@ object SyntaxParser {
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#package
   def package_[_: P]: P[Package] = P("package" ~/ fullIdent ~ ";").map(Package)
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#option
-  def option[_: P]: P[OptionExpr] = P("option" ~/ optionName.! ~ "=" ~ constant ~ ";")
+  def option[_: P]: P[OptionExpr] = P("option" ~/ optionName ~ "=" ~ constant ~ ";")
   .map { case (name, constant) => OptionExpr(name, constant) }
-  def optionName[_: P] = P((ident | ("(" ~/ fullIdent ~ ")")) ~ ("." ~ ident).rep)
+  def optionName[_: P]: P[String] = P((ident | ("(" ~/ fullIdent ~ ")")) ~ ("." ~ ident).rep).!
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#fields
-  def type_[_: P] = P(
+  def type_[_: P]: P0 = P(
     "double" | "float" | "int32" | "int64" | "uint32" | "uint64" |
     "sint32" | "sint64" | "fixed32" | "fixed64" | "sfixed32" | "sfixed64" |
     "bool" | "string" | "bytes" | messageType | enumType)
@@ -101,7 +101,7 @@ object SyntaxParser {
     P("repeated".!.? ~ type_.! ~ fieldName ~ "=" ~ fieldNumber ~ ("[" ~/ fieldOptions ~ "]").? ~ ";")
     .map { case (r, t, n, num, opts) => Field(r.isDefined, t, n, num, opts.toList.flatten) }
   def fieldOptions[_: P]: P[Seq[OptionExpr]] = P(fieldOption.rep(min = 1, sep = ","))
-  def fieldOption[_: P]: P[OptionExpr] = P(optionName.! ~ "=" ~ constant)
+  def fieldOption[_: P]: P[OptionExpr] = P(optionName ~ "=" ~ constant)
     .map { case (n, c) => OptionExpr(n, c) }
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#oneof_and_oneof_field
   def oneof[_: P]: P[Oneof] = P("oneof" ~/ oneofName ~ "{" ~/ (oneofField.map(Some.apply) | emptyStatement.map(_ => None)).rep ~ "}")
@@ -116,7 +116,7 @@ object SyntaxParser {
     "fixed32", "fixed64", "sfixed32", "sfixed64", "bool", "string").!)
     .map(s => KeyType.fromString(s).getOrElse(throw new IllegalStateException(s"Unsupported key type found $s")))
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#reserved
-  def reserved[_: P] = P("reserved" ~/ (ranges | fieldNames) ~ ";")
+  def reserved[_: P]: P[MessageExpr] = P("reserved" ~/ (ranges | fieldNames) ~ ";")
   def ranges[_: P]: P[ReservedRanges] = P(range.rep(min = 1, sep = ","))
     .map(ReservedRanges)
   def range[_: P]: P[Range] = P(intLit ~ ("to" ~/ (intLit | "max".!)).?)
@@ -143,7 +143,7 @@ object TopLevelDefinitionsParser {
     case (name, number, Some(options)) => EnumField(name, number, options)
     case (name, number, None) => EnumField(name, number, List.empty)
   }
-  def enumValueOption[_: P]: P[OptionExpr] = P(optionName.! ~ "=" ~ constant)
+  def enumValueOption[_: P]: P[OptionExpr] = P(optionName ~ "=" ~ constant)
     .map { case (name, constant) => OptionExpr(name, constant) }
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#message_definition
   def message[_: P]: P[Message] = P("message" ~/ messageName ~ messageBody)
@@ -151,7 +151,7 @@ object TopLevelDefinitionsParser {
   def messageBody[_: P]: P[Seq[MessageExpr]] = P("{" ~/ (field.map(Some.apply) | enum.map(Some.apply) | message.map(Some.apply) | option.map(Some.apply) | oneof.map(Some.apply) | mapField.map(Some.apply) |
     reserved.map(Some.apply) | emptyStatement.map(_ => None)).rep.map(_.flatten) ~ "}")
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#service_definition
-  def service[_: P] = P("service" ~/ serviceName ~ "{" ~/ (option.map(Some.apply) | rpc.map(Some.apply) | emptyStatement.map(_ => None)).rep.map(_.flatten) ~ "}")
+  def service[_: P]: P[Service] = P("service" ~/ serviceName ~ "{" ~/ (option.map(Some.apply) | rpc.map(Some.apply) | emptyStatement.map(_ => None)).rep.map(_.flatten) ~ "}")
     .map { case (name, body) => Service(name, body) }
   def rpc[_: P]: P[Rpc] = P("rpc" ~ rpcName ~ "(" ~/ "stream".? ~ messageType.! ~ ")" ~ "returns" ~ "(" ~/ "stream".? ~
     messageType.! ~ ")" ~ (( "{" ~/ (option.map(Some.apply) | emptyStatement.map(_ => None)).rep.map(_.flatten) ~ "}" ) | P(";").map(_ => List.empty)))
