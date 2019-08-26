@@ -12,7 +12,7 @@ object LexicalElementsParser {
   def hexDigit[_: P]: P0 = P(CharIn("0-9", "A-F", "a-f"))
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#identifiers
   def ident[_: P]: P0 = P(letter ~ (letter | decimalDigit | "_").rep)
-  def fullIdent[_: P]: P[String] = P(ident.rep(min = 1, sep = ".").!)
+  def fullIdent[_: P]: P[Seq[String]] = P(ident.!.rep(min = 1, sep = "."))
   def messageName[_: P]: P[String] = P(ident.!)
   def enumName[_: P]: P[String] = P(ident.!)
   def fieldName[_: P]: P[String] = P(ident.!)
@@ -60,7 +60,6 @@ object LexicalElementsParser {
   def emptyStatement[_: P]: P0 = P(";")
   // https://developers.google.com/protocol-buffers/docs/reference/proto3-spec#constant
   def constant[_: P]: P[Constant] = P(
-    fullIdent.!.map(StringConstant) |
     (StringIn("-", "+").? ~ intLit).!.map(s => IntConstant(s.toInt)) |
     (StringIn("-", "+").? ~ floatLit).!.map {
       case "-inf" => FloatConstant(Float.NegativeInfinity)
@@ -68,7 +67,7 @@ object LexicalElementsParser {
       case "+nan" | "nan" | "-nan" => FloatConstant(Float.NaN)
       case s => FloatConstant(s.toFloat)
     } |
-    strLit.map(StringConstant) | boolLit.map(BooleanConstant))
+    strLit.map(StringConstant) | boolLit.map(BooleanConstant) | fullIdent.map(FullIdentConstant))
 }
 
 @SuppressWarnings(Array("DisableSyntax.throw"))
