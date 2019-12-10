@@ -38,7 +38,7 @@ lazy val publishSettings = Seq(
 
 lazy val betterMonadicForVersion = "0.3.1"
 lazy val fastparseVersion = "2.1.3"
-lazy val utestVersion = "0.7.1"
+lazy val utestVersion = "0.7.2"
 lazy val scalafixNoinferVersion = "0.1.0-M1"
 
 ThisBuild / scalafixDependencies +=
