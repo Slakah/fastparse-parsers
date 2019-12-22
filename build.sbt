@@ -81,6 +81,26 @@ lazy val aws = crossProject(JSPlatform, JVMPlatform)
     ).map(_ % "test")
   )
 
+lazy val graphql = crossProject(JSPlatform, JVMPlatform)
+  .in(file("modules/graphql"))
+  .jsSettings(
+    // currently sbt-doctest doesn't work in JS builds
+    // https://github.com/tkawachi/sbt-doctest/issues/52
+    doctestGenTests := Seq.empty
+  )
+  .settings(
+    commonSettings,
+    publishSettings,
+    name := "fastparse-graphql",
+    testFrameworks += new TestFramework("utest.runner.Framework"),
+    doctestTestFramework := DoctestTestFramework.MicroTest,
+    libraryDependencies ++= Seq(
+      "com.lihaoyi" %%% "fastparse" % fastparseVersion
+    ) ++ Seq(
+      "com.lihaoyi" %%% "utest" % utestVersion
+    ).map(_ % "test")
+  )
+
 lazy val protobuf = crossProject(JSPlatform, JVMPlatform)
   .in(file("modules/protobuf"))
   .jsSettings(
